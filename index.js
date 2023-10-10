@@ -5,6 +5,7 @@ import db from "./config/Database.js";
 import router from "./routes/userRouter.js";
 import Users from "./models/UserModel.js";
 import contact from "./routes/contactRouter.js";
+import cors from "cors";
 
 dotenv.config();
 const app = express();
@@ -17,6 +18,7 @@ try {
   console.error(error);
 }
 
+app.use(cors);
 app.use(cookieParser());
 app.use(express.json());
 app.use(router);
