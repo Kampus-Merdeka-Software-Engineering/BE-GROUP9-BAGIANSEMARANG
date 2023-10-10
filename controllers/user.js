@@ -29,48 +29,36 @@ export const Register = async (req, res) => {
   }
 };
 
-export const Login = async (req, res) => {
+export const login = async (req, res) => {
   try {
-    const user = await Users.findAll({
-      where: {
-        email: req.body.email,
-      },
-    });
-    const match = await bcrypt.compare(req.password, user[0].password);
-    if (!match) return res.status(400).json({ msg: "Wrong Passeord" });
-    const userId = user[0].id;
-    const name = user[0].name;
-    const email = user[0].email;
+    const { email, password } = req.body;
+
+    const user = await Users.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({ msg: "Email atau kata sandi salah" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ msg: "Email atau kata sandi salah" });
+    }
+
+    const { id, name, email: userEmail } = user;
+
     const accessToken = jwt.sign(
-      { userId, name, email },
+      { userId: id, name, email: userEmail },
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: "35s",
       }
     );
-    const refreshToken = jwt.sign(
-      { userId, name, email },
-      process.env.REFRESh_TOKEN_SECRET,
-      {
-        expiresIn: "1d",
-      }
-    );
-    await Users.update(
-      { refresh_token: refresToken },
-      {
-        where: {
-          id: userId,
-        },
-      }
-    );
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      secure: true,
-    });
-    res.json({ accessToken });
+
+    res.json({ msg: "Login berhasil", accessToken });
   } catch (error) {
-    res.status(404).json({ msg: "Email tidak ditemukan" });
+    console.error(error);
+    res.status(500).json({ msg: "Terjadi kesalahan server" });
   }
 };
 
